@@ -14,10 +14,19 @@ Each word origin is {row}_{column}_{direction}, e.g. "12_5_UL", where
 
 # 2019-05 Mark Beutnagel
 #
+# This solution builds a trie from the puzzle grid, then searches words
+# one at a time. The trie also encodes the origin and direction of each
+# string.
+#
 # - NB: To avoid spurious duplication, all single-letter "strings" are
 # recorded with 'X' representing a null direction: "X marks the spot".
 # This will prevent the word "A" from appearing 8 times at the same coordinate,
 # each with a different direction.
+
+# TODO: Unit tests
+# TODO: Timing
+# TODO? Create a TrieNode class rather than use a special key for origin coordinates?
+# TODO? Write output as JSON for more flexible testing?
 
 ##-----------------------------------------------------------------------
 ## Constants
@@ -46,19 +55,24 @@ DIRECTIONS = {
     'X':  (None, None)
 }
 
-WORD_ORIGIN = 'WordOrigin'
+# Keep a list of word-start tuples in each node. For now just use the following
+# non-letter key within the existing letter dictionary.  Example: if the word
+# "atom" apears twice in the puzzle, and "atomic" appears once, the trie
+# might contain something like this:
+#
+#    ... {'o': ...
+#           {'m':
+#               {'i': {'c'; ...},
+#                'WORD_ORIGINS': [(3,6,'DR'),(12,8,'U')],
+#                 ... }, ... }}
+#
+# This shows "atom" is found at row 3, column 6 going down-right and at row 12,
+# column 3 straight up. Note that the 'm' node contains both the origin info
+# and the continuation of the word 'atomic'. Also note that every node on the
+# path to "atomic" will include the same origin info, so e.g. the word "at"
+# will include these origins, and perhaps many others (e.g. "attic").
 
-# TODO? Create a TrieNode class rather than use a special key?
-# Keep a list of word-start locations in each node, for now just by
-# using a non-letter key within the letter dictionary. Example: if
-# the word "atom" apears twice in the puzzle, and "atomic" appears once,
-# the trie might contain
-#    ... {'o': {'m': {'WORD_ORIGIN': [(3,6,'DR'),(12,8,'U')], 'i': {...},
-# So, "atom" apears at row 3, column 6 going down-right and at row 12, column 3
-# straight up. Note that the 'm' node contains both the origin info and
-# the continuation of the word 'atomic'. Also note that every node leading
-# down to atomic will include the same origin info for that word, so e.g.
-# the word "at" will include the same origin, and perhaps many others.
+WORD_ORIGINS = '<Origins>'
 
 ##-----------------------------------------------------------------------
 ## Utility Functions
@@ -86,9 +100,9 @@ def populate_trie(trie, grid, nrows, ncols, env):
                     if env['verbose']: print(f'letter: {letter} at ({r},{c})')
                     if not letter in t:
                         # uses set() to collapse multiple 'X' origin entries
-                        t[letter] = {WORD_ORIGIN: set()}
+                        t[letter] = {WORD_ORIGINS: set()}
                     t = t[letter]
-                    t[WORD_ORIGIN].add(origin if multi_character else origin_x)
+                    t[WORD_ORIGINS].add(origin if multi_character else origin_x)
                     multi_character = True
                     if env['verbose']: print(r,c,letter)
                     r += r_step
@@ -115,7 +129,7 @@ class Puzzle(object):
             if ch not in t:
                 return False
             t = t[ch]
-        return t[WORD_ORIGIN]
+        return t[WORD_ORIGINS]
 
     def ingest(self, lofs):
         if self.trie:
