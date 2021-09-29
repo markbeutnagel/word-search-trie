@@ -24,8 +24,8 @@ The word list should be one word per line, e.g.
     ALE
     IT
 
-Output list each word noting success or failure. If found, it also
-reports reach location and direction for the word. Single letter words
+Output lists each word noting success or failure. If found, it also
+reports each location and direction for the word. Single letter words
 are allowed, and use the non-direction symbol 'X'. All other words use
 some combination of U, D, R, L for up, down, right, left.
 
